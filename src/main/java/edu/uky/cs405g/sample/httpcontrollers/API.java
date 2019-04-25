@@ -60,10 +60,10 @@ public class API {
     @GET
     @Path("/listlocations")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response listTeams() {
+    public Response listlocations() {
         String responseString = "{}";
         try {
-            Map<String,String> teamMap = Launcher.dbEngine.getLocations();
+            Map<String, String> teamMap = Launcher.dbEngine.getLocations();
 
             responseString = Launcher.gson.toJson(teamMap);
 
@@ -79,6 +79,7 @@ public class API {
         return Response.ok(responseString).header("Access-Control-Allow-Origin", "*").build();
     }
 
+
     //curl http://localhost:9998/api/getlocation/800%20Rose%20St.
     //{"address":"800 Rose St.","lid":"c078b038-8ad2-4f45-adf0-03a22fffa8b9"}
     @GET
@@ -88,7 +89,7 @@ public class API {
         String responseString = "{}";
         try {
 
-            Map<String,String> teamMap = Launcher.dbEngine.getLocation(address);
+            Map<String, String> teamMap = Launcher.dbEngine.getLocation(address);
 
             responseString = Launcher.gson.toJson(teamMap);
 
@@ -122,7 +123,7 @@ public class API {
 
             System.out.println("status: " + status);
 
-            responseString = "{\"status\":\"" + status +"\"}";
+            responseString = "{\"status\":\"" + status + "\"}";
 
 
         } catch (Exception ex) {
@@ -158,14 +159,14 @@ public class API {
             Map<String, String> myMap = gson.fromJson(jsonString, mapType);
             String address = myMap.get("address");
 
-            Map<String,String> addressMap = Launcher.dbEngine.getLocation(address);
+            Map<String, String> addressMap = Launcher.dbEngine.getLocation(address);
 
-            if(addressMap.size() == 0) {
+            if (addressMap.size() == 0) {
 
                 //generate a new unique location Id
                 String locationId = UUID.randomUUID().toString();
 
-                String createUsersTable = "insert into location values ('" + locationId + "','" + address  + "')";
+                String createUsersTable = "insert into location values ('" + locationId + "','" + address + "')";
 
                 System.out.println(createUsersTable);
 
@@ -196,4 +197,63 @@ public class API {
         return Response.ok(returnString).header("Access-Control-Allow-Origin", "*").build();
     }
 
+    //Add service
+    @POST
+    @Path("/addservice")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response crunchifyREST12(InputStream incomingData) {
+
+        StringBuilder crunchifyBuilder = new StringBuilder();
+        String returnString = null;
+        try {
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(incomingData));
+            String line = null;
+            while ((line = in.readLine()) != null) {
+                crunchifyBuilder.append(line);
+            }
+
+            String jsonString = crunchifyBuilder.toString();
+            Map<String, String> myMap = gson.fromJson(jsonString, mapType);
+            String address = myMap.get("address");
+            String department_id = myMap.get("department_id");
+            String tax_id = myMap.get("tax_id");
+            Map<String, String> serviceMap;
+            serviceMap = Launcher.dbEngine.getservice(address, department_id, tax_id);
+
+            if (serviceMap.size() == 0) {
+
+                //generate a new unique location Id
+                String serviceId = UUID.randomUUID().toString();
+
+                String createUsersTable = "insert into service values ('" + serviceId + "','" + address + "', '" + department_id + "','" + tax_id + "')";
+
+                System.out.println(createUsersTable);
+
+                Launcher.dbEngine.executeUpdate(createUsersTable);
+
+                serviceMap = Launcher.dbEngine.getLocation(address);
+
+                returnString = gson.toJson(serviceMap);
+
+
+            } else {
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Can't insert duplicate service!")
+                        .header("Access-Control-Allow-Origin", "*").build();
+            }
+
+
+        } catch (Exception ex) {
+
+            StringWriter sw = new StringWriter();
+            ex.printStackTrace(new PrintWriter(sw));
+            String exceptionAsString = sw.toString();
+            ex.printStackTrace();
+
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error")
+                    .header("Access-Control-Allow-Origin", "*").build();
+        }
+
+        return Response.ok(returnString).header("Access-Control-Allow-Origin", "*").build();
+    }
 }
