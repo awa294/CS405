@@ -201,32 +201,31 @@ public class API {
     @POST
     @Path("/addservice")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response crunchifyREST12(InputStream incomingData) {
+    public Response addService(InputStream incomingData) {
 
-        StringBuilder crunchifyBuilder = new StringBuilder();
+        StringBuilder serviceBuilder = new StringBuilder();
         String returnString = null;
-        try {
 
+        try {
             BufferedReader in = new BufferedReader(new InputStreamReader(incomingData));
             String line = null;
             while ((line = in.readLine()) != null) {
-                crunchifyBuilder.append(line);
+                serviceBuilder.append(line);
             }
-
-            String jsonString = crunchifyBuilder.toString();
+            String jsonString = serviceBuilder.toString();
             Map<String, String> myMap = gson.fromJson(jsonString, mapType);
-            String address = myMap.get("address");
-            String department_id = myMap.get("department_id");
-            String tax_id = myMap.get("tax_id");
-            Map<String, String> serviceMap;
-            serviceMap = Launcher.dbEngine.getservice(address, department_id, tax_id);
-
+            String service_id = myMap.get("service_id");
+            Map<String, String> serviceMap = Launcher.dbEngine.getservice(service_id);
             if (serviceMap.size() == 0) {
+                String address = myMap.get("address");
+                String department_id = myMap.get("department_id");
+                String tax_id = myMap.get("tax_id");
+
 
                 //generate a new unique location Id
-                String serviceId = UUID.randomUUID().toString();
+                //String serviceId = UUID.randomUUID().toString();
 
-                String createUsersTable = "insert into service values ('" + serviceId + "','" + address + "', '" + department_id + "','" + tax_id + "')";
+                String createUsersTable = "insert into service values ('" + service_id + "','" + address + "', '" + department_id + "','" + tax_id + "')";
 
                 System.out.println(createUsersTable);
 
@@ -235,6 +234,8 @@ public class API {
                 serviceMap = Launcher.dbEngine.getLocation(address);
 
                 returnString = gson.toJson(serviceMap);
+
+
 
 
             } else {
@@ -255,5 +256,7 @@ public class API {
         }
 
         return Response.ok(returnString).header("Access-Control-Allow-Origin", "*").build();
-    }
+    } //addservice
+
+
 }
